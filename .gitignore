@@ -1,3 +1,6 @@
+.vscode/
+Save/
+
 CMakeLists.txt.user
 CMakeLists_modified.txt
 
