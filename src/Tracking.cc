@@ -1864,11 +1864,11 @@ namespace ORB_SLAM3
                 // 其中tstep表示a1到上一帧的时间间隔，a0 - (a1-a0)*(tini/tab)这个式子中tini可以是正也可以是负表示时间上的先后，(a1-a0)也是一样，多种情况下这个式子依然成立
                 acc = (mvImuFromLastFrame[i].a + mvImuFromLastFrame[i + 1].a -
                        (mvImuFromLastFrame[i + 1].a - mvImuFromLastFrame[i].a) * (tini / tab)) *
-                      0.5f;
+                      0.5f;//取两个frame时刻加速度的均值，fram[i]边界时刻的值用线性拟合取估计
                 // 计算过程类似加速度
                 angVel = (mvImuFromLastFrame[i].w + mvImuFromLastFrame[i + 1].w -
                           (mvImuFromLastFrame[i + 1].w - mvImuFromLastFrame[i].w) * (tini / tab)) *
-                         0.5f;
+                         0.5f;//取两个frame时刻角速度的均值，frame[i]边界时刻的值用线性拟合取估计
                 tstep = mvImuFromLastFrame[i + 1].t - mCurrentFrame.mpPrevFrame->mTimeStamp;
             }
             else if (i < (n - 1))
@@ -1911,7 +1911,7 @@ namespace ORB_SLAM3
         mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
         mCurrentFrame.mpLastKeyFrame = mpLastKeyFrame;
 
-        mCurrentFrame.setIntegrated();
+        mCurrentFrame.setIntegrated();//设置完成预积分的标志位
 
         // Verbose::PrintMess("Preintegration is finished!! ", Verbose::VERBOSITY_DEBUG);
     }

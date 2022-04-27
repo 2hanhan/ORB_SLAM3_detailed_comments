@@ -1614,7 +1614,7 @@ namespace ORB_SLAM3
             Eigen::Vector3f vzg = v * ang / nv;
             // 获得重力方向到当前速度方向的旋转向量
             Rwg = Sophus::SO3f::exp(vzg).matrix();
-            mRwg = Rwg.cast<double>();
+            mRwg = Rwg.cast<double>();//旋转对齐重力与-z轴
             mTinit = mpCurrentKeyFrame->mTimeStamp - mFirstTs; //初始化当前frame与第一frame的时间差
         }
         else
