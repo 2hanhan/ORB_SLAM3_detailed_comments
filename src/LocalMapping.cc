@@ -1527,8 +1527,8 @@ namespace ORB_SLAM3
         // 从时间及帧数上限制初始化，不满足下面的不进行初始化
         if (mbMonocular)
         {
-            minTime = 2.0; // 2s初始化
-            nMinKF = 10;   // 10帧
+            minTime = 2.0; // 最小时间差2s
+            nMinKF = 10;   // 最少关键帧10帧
         }
         else
         {
@@ -1556,7 +1556,7 @@ namespace ORB_SLAM3
             return;
 
         mFirstTs = vpKF.front()->mTimeStamp;
-        if (mpCurrentKeyFrame->mTimeStamp - mFirstTs < minTime)
+        if (mpCurrentKeyFrame->mTimeStamp - mFirstTs < minTime) //如果时间间隔小于最小时间差直接返回
             return;
 
         // 正在做IMU的初始化，在tracking里面使用，如果为true，暂不添加关键帧
@@ -1571,7 +1571,7 @@ namespace ORB_SLAM3
         }
 
         // 2. 正式IMU初始化
-        const int N = vpKF.size();
+        const int N = vpKF.size(); //初始化是的总keyframe个数
         IMU::Bias b(0, 0, 0, 0, 0, 0);
 
         // Compute and KF velocities mRwg estimation
@@ -1583,36 +1583,39 @@ namespace ORB_SLAM3
             dirG.setZero();
             for (vector<KeyFrame *>::iterator itKF = vpKF.begin(); itKF != vpKF.end(); itKF++)
             {
-                if (!(*itKF)->mpImuPreintegrated)
+                if (!(*itKF)->mpImuPreintegrated) //必须有预积分数据
                     continue;
-                if (!(*itKF)->mPrevKF)
+                if (!(*itKF)->mPrevKF) //必须有预积分的frame(有上一frame)
                     continue;
 
                 // 初始化时关于速度的预积分定义Ri.t()*(s*Vj - s*Vi - Rwg*g*tij)
-                dirG -= (*itKF)->mPrevKF->GetImuRotation() * (*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity();
+                dirG -= (*itKF)->mPrevKF->GetImuRotation() * (*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity(); // world坐标系下的预积分的速度
                 // 求取实际的速度，位移/时间
-                Eigen::Vector3f _vel = ((*itKF)->GetImuPosition() - (*itKF)->mPrevKF->GetImuPosition()) / (*itKF)->mpImuPreintegrated->dT;
-                (*itKF)->SetVelocity(_vel);
-                (*itKF)->mPrevKF->SetVelocity(_vel);
+                Eigen::Vector3f _vel = ((*itKF)->GetImuPosition() - (*itKF)->mPrevKF->GetImuPosition()) / (*itKF)->mpImuPreintegrated->dT; //根据pose/dt计算出的速度
+                (*itKF)->SetVelocity(_vel);                                                                                                //更新关键帧的速度
+                (*itKF)->mPrevKF->SetVelocity(_vel);                                                                                       //更新prekeyfrane的速度
             }
             // dirG = sV1 - sVn + n*Rwg*g*t
             // 归一化
             dirG = dirG / dirG.norm();
             // 原本的重力方向
             Eigen::Vector3f gI(0.0f, 0.0f, -1.0f);
-            // 求速度方向与重力方向的角轴
+            // 求重力gl 旋转到 速度方向dirG的旋转轴
+            // 旋转轴 v =  gl x dirG
             Eigen::Vector3f v = gI.cross(dirG);
             // 求角轴模长
             const float nv = v.norm();
             // 求转角大小
+            // cos(<gl,dirg>)
             const float cosg = gI.dot(dirG);
             const float ang = acos(cosg);
-            // 先计算旋转向量，在除去角轴大小
+            // 旋转向量旋转轴单位化 v/nv
+            // 旋转向量转角为 ang
             Eigen::Vector3f vzg = v * ang / nv;
             // 获得重力方向到当前速度方向的旋转向量
             Rwg = Sophus::SO3f::exp(vzg).matrix();
             mRwg = Rwg.cast<double>();
-            mTinit = mpCurrentKeyFrame->mTimeStamp - mFirstTs;
+            mTinit = mpCurrentKeyFrame->mTimeStamp - mFirstTs; //初始化当前frame与第一frame的时间差
         }
         else
         {
@@ -1674,8 +1677,8 @@ namespace ORB_SLAM3
         if (!mpAtlas->isImuInitialized())
         {
             // ! 重要！标记初始化成功
-            mpAtlas->SetImuInitialized();
-            mpTracker->t0IMU = mpTracker->mCurrentFrame.mTimeStamp;
+            mpAtlas->SetImuInitialized();                           //设置初始化成功
+            mpTracker->t0IMU = mpTracker->mCurrentFrame.mTimeStamp; // t0设置为当前frame的时间戳
             mpCurrentKeyFrame->bImu = true;
         }
 
@@ -1698,7 +1701,7 @@ namespace ORB_SLAM3
         // Get Map Mutex
         unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
 
-        unsigned long GBAid = mpCurrentKeyFrame->mnId;
+        unsigned long GBAid = mpCurrentKeyFrame->mnId; //进行GBA时的当前keyframe
 
         // Process keyframes in the queue
         // 6. 处理一下新来的关键帧，这些关键帧没有参与优化
@@ -1735,32 +1738,33 @@ namespace ORB_SLAM3
                 {
                     // pChild->GetPose()也是优化前的位姿，Twc也是优化前的位姿
                     // 7.3 因此他们的相对位姿是比较准的，可以用于更新pChild的位姿
-                    Sophus::SE3f Tchildc = pChild->GetPose() * Twc;
+                    Sophus::SE3f Tchildc = pChild->GetPose() * Twc; // Tc2child = Tw2child*Tc2w，GBA前的相对位姿
                     // 使用相对位姿，根据pKF优化后的位姿更新pChild位姿，最后结果都暂时放于mTcwGBA
-                    pChild->mTcwGBA = Tchildc * pKF->mTcwGBA;
+                    pChild->mTcwGBA = Tchildc * pKF->mTcwGBA; // Tw2child = Tc2child*Tw2c，根据相对位姿更新childGBA后的Tworld2c
 
                     // 7.4 使用相同手段更新速度
-                    Sophus::SO3f Rcor = pChild->mTcwGBA.so3().inverse() * pChild->GetPose().so3();
+                    Sophus::SO3f Rcor = pChild->mTcwGBA.so3().inverse() * pChild->GetPose().so3(); // Tchild2w*Tw3child，:从GBA前world2到GBA后的world
                     if (pChild->isVelocitySet())
                     {
-                        pChild->mVwbGBA = Rcor * pChild->GetVelocity();
+                        pChild->mVwbGBA = Rcor * pChild->GetVelocity(); // GBA后的速度
                     }
                     else
                     {
                         Verbose::PrintMess("Child velocity empty!! ", Verbose::VERBOSITY_NORMAL);
                     }
 
-                    pChild->mBiasGBA = pChild->GetImuBias();
-                    pChild->mnBAGlobalForKF = GBAid;
+                    pChild->mBiasGBA = pChild->GetImuBias(); //更新GBA后的偏置
+                    pChild->mnBAGlobalForKF = GBAid;         //设置该child已经在GBAid下进行过更新了
                 }
                 // 加入到list中，再去寻找pChild的子关键帧
+                //这波是要把只要有共视关系的keyframe全都遍历一遍
                 lpKFtoCheck.push_back(pChild);
             }
 
             // 7.5 此时pKF的利用价值就没了，但是里面的数值还都是优化前的，优化后的全部放于类似mTcwGBA这样的变量中
             // 所以要更新到正式的状态里，另外mTcwBefGBA要记录更新前的位姿，用于同样的手段更新三维点用
-            pKF->mTcwBefGBA = pKF->GetPose();
-            pKF->SetPose(pKF->mTcwGBA);
+            pKF->mTcwBefGBA = pKF->GetPose(); // GBA前的位姿
+            pKF->SetPose(pKF->mTcwGBA);       // GBA后的位姿更新到正式的pose中
 
             // 速度偏置同样更新
             if (pKF->bImu)
@@ -1775,7 +1779,7 @@ namespace ORB_SLAM3
             }
 
             // pop
-            lpKFtoCheck.pop_front();
+            lpKFtoCheck.pop_front(); //该frameGBA完成就弹出删了
         }
 
         // Correct MapPoints
@@ -1806,18 +1810,18 @@ namespace ORB_SLAM3
 
                 // Map to non-corrected camera
                 // 8.2 根据优化前的世界坐标系下三维点的坐标以及优化前的关键帧位姿计算这个点在关键帧下的坐标
-                Eigen::Vector3f Xc = pRefKF->mTcwBefGBA * pMP->GetWorldPos();
+                Eigen::Vector3f Xc = pRefKF->mTcwBefGBA * pMP->GetWorldPos(); // Pc = Tw2c*Pose，point点在GBA前camera坐标系下的相对位姿
 
                 // Backproject using corrected camera
                 // 8.3 根据优化后的位姿转到世界坐标系下作为这个点优化后的三维坐标
-                pMP->SetWorldPos(pRefKF->GetPoseInverse() * Xc);
+                pMP->SetWorldPos(pRefKF->GetPoseInverse() * Xc); // Pw = Tc2w*Pc，根据GBA后的位姿Tc2w转化到Pw
             }
         }
 
         Verbose::PrintMess("Map updated!", Verbose::VERBOSITY_NORMAL);
 
         mnKFs = vpKF.size();
-        mIdxInit++;
+        mIdxInit++; //? 统计IMU初始化次数
 
         // 9. 再有新的来就不要了~不然陷入无限套娃了
         for (list<KeyFrame *>::iterator lit = mlNewKeyFrames.begin(), lend = mlNewKeyFrames.end(); lit != lend; lit++)
@@ -1828,9 +1832,9 @@ namespace ORB_SLAM3
         mlNewKeyFrames.clear();
 
         mpTracker->mState = Tracking::OK;
-        bInitializing = false;
+        bInitializing = false; //是否正在进行初始化
 
-        mpCurrentKeyFrame->GetMap()->IncreaseChangeIndex();
+        mpCurrentKeyFrame->GetMap()->IncreaseChangeIndex();//? 更改map次数
 
         return;
     }
