@@ -6,8 +6,6 @@
 
 ![DEMO](https://github.com/electech6/ORB_SLAM3_detailed_comments/blob/master/demo.gif)
 
-![课程大纲](https://github.com/electech6/ORB_SLAM3_detailed_comments/blob/master/outline.png)
-
 [ORB-SLAM3 逐行源码讲解](https://cvlife.net/detail/term_6255372036a53_o5VfgR/25)
 
 ----
