@@ -189,6 +189,10 @@ endif()
 #Monocular examples
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Monocular)
 
+add_executable(mono_kaist
+        Examples/Monocular/mono_kaist.cc)
+target_link_libraries(mono_kaist ${PROJECT_NAME})
+
 add_executable(mono_tum
         Examples/Monocular/mono_tum.cc)
 target_link_libraries(mono_tum ${PROJECT_NAME})
@@ -217,6 +221,10 @@ endif()
 
 #Monocular inertial examples
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Monocular-Inertial)
+
+add_executable(mono_inertial_kaist
+        Examples/Monocular-Inertial/mono_inertial_kaist.cc)
+target_link_libraries(mono_inertial_kaist ${PROJECT_NAME})
 
 add_executable(mono_inertial_euroc
         Examples/Monocular-Inertial/mono_inertial_euroc.cc)

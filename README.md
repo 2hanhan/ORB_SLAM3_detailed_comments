@@ -1,10 +1,18 @@
-# 根据计算机视觉life的注释，自己加一些理解吧
+# 根据[计算机视觉life的注释版本](https://github.com/electech6/ORB_SLAM3_detailed_comments)，加一些自己的理解吧
+
+# 添加增加
+## 对[ kaist 数据集](https://sites.google.com/view/complex-urban-dataset)的支持
+运行[kaist_urban_examples.sh](kaist_urban_examples.sh)
+1. `mono`单目
+2. `mono_inertial`单目+IMU
+
+# BUG 汇总
+1. `mono_inertial`Debug模式下inertialBA报错
+编译设置为`Release`错误就直接消失了，原因位置。
 
 # ORB-SLAM3 超详细注释
 
 -by 计算机视觉life 公众号旗下开源学习小组：SLAM研习社
-
-![DEMO](https://github.com/electech6/ORB_SLAM3_detailed_comments/blob/master/demo.gif)
 
 [ORB-SLAM3 逐行源码讲解](https://cvlife.net/detail/term_6255372036a53_o5VfgR/25)
 
