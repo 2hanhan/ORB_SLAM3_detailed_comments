@@ -1864,11 +1864,11 @@ namespace ORB_SLAM3
                 // 其中tstep表示a1到上一帧的时间间隔，a0 - (a1-a0)*(tini/tab)这个式子中tini可以是正也可以是负表示时间上的先后，(a1-a0)也是一样，多种情况下这个式子依然成立
                 acc = (mvImuFromLastFrame[i].a + mvImuFromLastFrame[i + 1].a -
                        (mvImuFromLastFrame[i + 1].a - mvImuFromLastFrame[i].a) * (tini / tab)) *
-                      0.5f;//取两个frame时刻加速度的均值，fram[i]边界时刻的值用线性拟合取估计
+                      0.5f; //取两个frame时刻加速度的均值，fram[i]边界时刻的值用线性拟合取估计
                 // 计算过程类似加速度
                 angVel = (mvImuFromLastFrame[i].w + mvImuFromLastFrame[i + 1].w -
                           (mvImuFromLastFrame[i + 1].w - mvImuFromLastFrame[i].w) * (tini / tab)) *
-                         0.5f;//取两个frame时刻角速度的均值，frame[i]边界时刻的值用线性拟合取估计
+                         0.5f; //取两个frame时刻角速度的均值，frame[i]边界时刻的值用线性拟合取估计
                 tstep = mvImuFromLastFrame[i + 1].t - mCurrentFrame.mpPrevFrame->mTimeStamp;
             }
             else if (i < (n - 1))
@@ -1911,7 +1911,7 @@ namespace ORB_SLAM3
         mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
         mCurrentFrame.mpLastKeyFrame = mpLastKeyFrame;
 
-        mCurrentFrame.setIntegrated();//设置完成预积分的标志位
+        mCurrentFrame.setIntegrated(); //设置完成预积分的标志位
 
         // Verbose::PrintMess("Preintegration is finished!! ", Verbose::VERBOSITY_DEBUG);
     }
@@ -3167,7 +3167,7 @@ namespace ORB_SLAM3
         mbCreatedMap = true;
     }
 
-    /*
+    /**
      * @brief 检查上一帧中的地图点是否需要被替换
      *
      * Local Mapping线程可能会将关键帧中某些地图点进行替换，由于tracking中需要用到上一帧地图点，所以这里检查并更新上一帧中被替换的地图点
